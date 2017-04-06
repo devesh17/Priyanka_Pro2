@@ -1,5 +1,6 @@
 package com.example.priyankaagarwal.priyanka_pro1;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -39,6 +40,7 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
     ArrayList<String> TClist;
     ArrayAdapter<String> Adapter_TClist;
     ArrayList<TC_Type_Item> Info_TC_List;
+    ArrayList<TC_Type_Item> Info_TC_List_1;
 
 
     @Override
@@ -47,7 +49,39 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
         setContentView(R.layout.activity_ping_test_setup);
         setTitle("Ping Test Setup");
 
+
+
+        Bundle bundleObject = getIntent().getExtras();
+        Info_TC_List_1 = (ArrayList<TC_Type_Item>) bundleObject.getSerializable("Play_TC_List");
+
         Info_TC_List = new ArrayList<TC_Type_Item>();
+        TClist = new ArrayList<String>();
+
+        if(Info_TC_List_1 == null)
+        {
+            Toast.makeText(this,"00000000", Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            // implement ist method here
+            Info_TC_List = (ArrayList<TC_Type_Item>)Info_TC_List_1.clone();
+            //TC_Type_Item temp = new TC_Type_Item();
+
+            for (TC_Type_Item temp:Info_TC_List) {
+                if(temp.Bit_TC == true)
+                {
+                    String TC_Details_1 =  "(P1:" + temp.Info_Host + " P2:" + temp.Info_Size + " P3:" + temp.Info_Packet_Count + " P4:" + temp.Info_Interval + ")";
+                    TClist.add(TC_Details_1);
+                }
+                else
+                {
+                    String TC_Details_2 = "Delay for " + temp.Info_Delay + "sec" ;
+                    TClist.add(TC_Details_2);
+                }
+            }
+
+        }
+
 
         _ET_HostName = (EditText)findViewById(R.id.editTextHostName);
         _ET_PacketCount = (EditText)findViewById(R.id.editTextNumPackets);
@@ -65,7 +99,7 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
         _spinner.setAdapter(adapter1);
         _spinner.setOnItemSelectedListener(this);
 
-        TClist = new ArrayList<String>();
+
         Adapter_TClist = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,TClist);
         _ListViewTC.setAdapter(Adapter_TClist);
         _ListViewTC.setLongClickable(true);
@@ -77,10 +111,12 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
             }
         });
 
+        Adapter_TClist.notifyDataSetChanged();
 
         onAddClick();
         onDelayAddClick();
         onDeleteClick();
+        OnSaveClick();
 
 
     }
@@ -178,5 +214,22 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
 
         );
     }
+
+
+    public void OnSaveClick(){
+        _BtnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent Save_Main_Intent = new Intent(getApplicationContext(),PingTestMain.class);
+                Bundle Save_Main_Bundle = new Bundle();
+                Save_Main_Bundle.putSerializable("Info_TC_List",Info_TC_List);
+                Save_Main_Intent.putExtras(Save_Main_Bundle);
+                startActivity(Save_Main_Intent);
+
+            }
+        });
+
+    }
+
 
 }

@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Priyanka_Pro1</string>
+
+    <string-array name= "PacketSize">
+        <item>Packet Size</item>
+        <item>32</item>
+        <item>64</item>
+        <item>128</item>
+    </string-array>
+</resources>
