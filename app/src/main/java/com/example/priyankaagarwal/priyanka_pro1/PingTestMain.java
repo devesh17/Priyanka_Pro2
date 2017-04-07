@@ -3,17 +3,38 @@ package com.example.priyankaagarwal.priyanka_pro1;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.InputStreamReader;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import java.lang.*;
 
 public class PingTestMain extends AppCompatActivity {
 
     Button _btn_PingSetup ;
     Button _btn_StartTest ;
+    TextView _screen;
+    private String display = "LOGS" + '\n';
 
     ArrayList<TC_Type_Item> Play_TC_List;
 
@@ -22,6 +43,9 @@ public class PingTestMain extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ping_test_main);
         setTitle("Ping Test");
+
+        _screen = (TextView)findViewById(R.id.TextView_Log);
+        _screen.setText(display);
 
         Bundle bundleObject = getIntent().getExtras();
         Play_TC_List = (ArrayList<TC_Type_Item>) bundleObject.getSerializable("Info_TC_List");
@@ -65,9 +89,91 @@ public class PingTestMain extends AppCompatActivity {
         _btn_StartTest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(PingTestMain.this,"Item to run " + Play_TC_List.size(),Toast.LENGTH_SHORT).show();
+
+
+                try
+                {
+                    for (TC_Type_Item temp1:Play_TC_List) {
+
+                        if(temp1.Bit_TC)
+                        {
+                            for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Interval);P_Count++)
+                            {
+                                String s = fExecutePing(temp1);
+                            }
+                        }
+
+                        else
+                        {
+                            for(int wait_count = 0; wait_count < Integer.parseInt(temp1.Info_Delay);wait_count++)
+                            {
+                                Thread.sleep(1000);
+                            }
+                        }
+
+                    }
+                }
+                //Toast.makeText(PingTestMain.this,"Item to run " + Play_TC_List.size(),Toast.LENGTH_SHORT).show();
+                catch (Exception e) {
+                     Toast.makeText(getApplicationContext(), e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                    //return Time_string;
+
+                }
+
             }
         });
     }
+
+
+    private void updatescreen()
+    {
+        _screen.setMovementMethod(new ScrollingMovementMethod());
+        _screen.setText(display);
+    }
+
+
+    //public void fExecutePing()
+    public String fExecutePing(TC_Type_Item Test_Info)
+    {
+        String Time_string = "fail";
+
+        try
+        {
+            String cmdPing = "ping -c 1 -s " + Test_Info.Info_Size + " " + Test_Info.Info_Host;
+            //String cmdPing = "ping "+host;
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec(cmdPing);
+            BufferedReader in = new BufferedReader(	new InputStreamReader(p.getInputStream()));
+            String inputLine;
+
+            while((inputLine = in.readLine())!= null)
+            {
+                display += inputLine + '\n' ;
+                updatescreen();
+
+                if(inputLine.contains("time="))
+                {
+                    Time_string = inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
+                    //_RespList.add(Time_string);
+                }
+
+            }
+
+            display += "Time String::" + Time_string + '\n';
+            updatescreen();
+            return Time_string;
+
+        }
+
+        catch (Exception e) {
+            Toast.makeText(this, "Error: "+ e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+            return Time_string;
+
+        }
+
+    }
+
+
+
 
 }
