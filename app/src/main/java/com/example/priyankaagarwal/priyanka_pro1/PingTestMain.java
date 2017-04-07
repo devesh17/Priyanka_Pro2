@@ -35,6 +35,7 @@ public class PingTestMain extends AppCompatActivity {
     Button _btn_StartTest ;
     TextView _screen;
     private String display = "LOGS" + '\n';
+    private String Final_Result = '\n' +  '\n' + "FINAL RESULTS:" + '\n';
 
     ArrayList<TC_Type_Item> Play_TC_List;
 
@@ -97,11 +98,17 @@ public class PingTestMain extends AppCompatActivity {
 
                         if(temp1.Bit_TC)
                         {
-                            for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Interval);P_Count++)
+                            for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Packet_Count);P_Count++)
                             {
                                 String s = fExecutePing(temp1);
+                                int Internal_Delay = (Integer.parseInt(temp1.Info_Interval))*1000;
+                                Thread.sleep(Internal_Delay);
+                                Final_Result += "PING NO: " + Integer.toString(P_Count+1) + " RespTime :" +  s +"ms" + '\n';
+
                             }
                         }
+
+
 
                         else
                         {
@@ -112,6 +119,11 @@ public class PingTestMain extends AppCompatActivity {
                         }
 
                     }
+
+                    display += Final_Result;
+                    updatescreen();
+
+
                 }
                 //Toast.makeText(PingTestMain.this,"Item to run " + Play_TC_List.size(),Toast.LENGTH_SHORT).show();
                 catch (Exception e) {
