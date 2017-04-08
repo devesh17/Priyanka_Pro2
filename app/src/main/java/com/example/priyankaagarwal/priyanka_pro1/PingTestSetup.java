@@ -106,6 +106,7 @@ public class PingTestSetup extends AppCompatActivity implements AdapterView.OnIt
         _ListViewTC.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+                delete_item = i;
                 view.setSelected(true);
                 return false;
             }

@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
              Intent intentPing = new Intent(MainActivity.this, PingTestMain.class);
 
              String ItemClicked = (String) adapterView.getItemAtPosition(i);

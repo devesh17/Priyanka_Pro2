@@ -7,6 +7,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,10 +35,36 @@ public class PingTestMain extends AppCompatActivity {
     Button _btn_PingSetup ;
     Button _btn_StartTest ;
     TextView _screen;
+    ScrollView _ScrollView1;
     private String display = "LOGS" + '\n';
     private String Final_Result = '\n' +  '\n' + "FINAL RESULTS:" + '\n';
+    ArrayList<String> Final_Result_list = new ArrayList<String>();
 
     ArrayList<TC_Type_Item> Play_TC_List;
+
+
+    private View.OnClickListener btnClickListner = new View.OnClickListener(){
+
+        /**
+         * Called when a view has been clicked.
+         *
+         * @param v The view that was clicked.
+         */
+        @Override
+        public void onClick(View v) {
+
+            switch (v.getId()) {
+
+                case R.id.btn_PingPlay:
+                    Toast.makeText(getApplicationContext(), "Start Button Clicked", Toast.LENGTH_SHORT).show();
+                    RunTest();
+                    break;
+                case R.id.btn_stop :
+                    StopTest();
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,14 +72,63 @@ public class PingTestMain extends AppCompatActivity {
         setContentView(R.layout.activity_ping_test_main);
         setTitle("Ping Test");
 
+        _ScrollView1 = (ScrollView)findViewById(R.id.ScrollView1);
         _screen = (TextView)findViewById(R.id.TextView_Log);
         _screen.setText(display);
 
         Bundle bundleObject = getIntent().getExtras();
         Play_TC_List = (ArrayList<TC_Type_Item>) bundleObject.getSerializable("Info_TC_List");
-        SetupButtonCLick1();
-        StartButtonClick();
+
+        _btn_StartTest = (Button)findViewById(R.id.btn_PingPlay);
+        _btn_StartTest.setOnClickListener(btnClickListner);
+
+         SetupButtonCLick1();
+        //StartButtonClick();
     }
+
+
+    public void RunTest(){
+
+        try
+        {
+
+            Thread t1 = new Thread(){
+
+                @Override
+                public void run(){
+
+                    try
+                    {
+                        MainRun();
+                    }
+
+                    catch (Exception e)
+                    {
+                        Toast.makeText(getApplicationContext(), "Error: "+ e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+
+            };
+
+            t1.start();
+
+        }
+
+        catch (Exception e)
+        {
+            Toast.makeText(getApplicationContext(), "Error: "+ e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+
+    public void StopTest(){
+
+    }
+
+
 
     private void SetupButtonCLick1() {
 
@@ -94,34 +170,20 @@ public class PingTestMain extends AppCompatActivity {
 
                 try
                 {
-                    for (TC_Type_Item temp1:Play_TC_List) {
+                    Thread T1 = new Thread(){
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    MainRun();
+                                }
+                            });
 
-                        if(temp1.Bit_TC)
-                        {
-                            for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Packet_Count);P_Count++)
-                            {
-                                String s = fExecutePing(temp1);
-                                int Internal_Delay = (Integer.parseInt(temp1.Info_Interval))*1000;
-                                Thread.sleep(Internal_Delay);
-                                Final_Result += "PING NO: " + Integer.toString(P_Count+1) + " RespTime :" +  s +"ms" + '\n';
-
-                            }
                         }
+                    };
 
-
-
-                        else
-                        {
-                            for(int wait_count = 0; wait_count < Integer.parseInt(temp1.Info_Delay);wait_count++)
-                            {
-                                Thread.sleep(1000);
-                            }
-                        }
-
-                    }
-
-                    display += Final_Result;
-                    updatescreen();
+                    T1.start();
 
 
                 }
@@ -141,6 +203,7 @@ public class PingTestMain extends AppCompatActivity {
     {
         _screen.setMovementMethod(new ScrollingMovementMethod());
         _screen.setText(display);
+
     }
 
 
@@ -152,7 +215,6 @@ public class PingTestMain extends AppCompatActivity {
         try
         {
             String cmdPing = "ping -c 1 -s " + Test_Info.Info_Size + " " + Test_Info.Info_Host;
-            //String cmdPing = "ping "+host;
             Runtime r = Runtime.getRuntime();
             Process p = r.exec(cmdPing);
             BufferedReader in = new BufferedReader(	new InputStreamReader(p.getInputStream()));
@@ -160,19 +222,15 @@ public class PingTestMain extends AppCompatActivity {
 
             while((inputLine = in.readLine())!= null)
             {
-                display += inputLine + '\n' ;
-                updatescreen();
 
                 if(inputLine.contains("time="))
                 {
+
                     Time_string = inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
-                    //_RespList.add(Time_string);
                 }
 
             }
 
-            display += "Time String::" + Time_string + '\n';
-            updatescreen();
             return Time_string;
 
         }
@@ -183,6 +241,106 @@ public class PingTestMain extends AppCompatActivity {
 
         }
 
+    }
+
+
+    public void MainRun()
+    {
+        try
+        {
+
+            int TC_Count = 0;
+
+            for (TC_Type_Item temp1:Play_TC_List) {
+
+                if(temp1.Bit_TC)
+                {
+                    TC_Count += 1;
+
+                    for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Packet_Count);P_Count++)
+                    {
+                        String s = fExecutePing(temp1);
+                        int Internal_Delay = (Integer.parseInt(temp1.Info_Interval))*1000;
+                        Thread.sleep(Internal_Delay);
+
+                        Final_Result = "TC No: " + Integer.toString(TC_Count) +" PING NO: " + Integer.toString(P_Count+1) + " RespTime :" +  s +"ms" + '\n';
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                display +=  Final_Result + '\n';
+                                Final_Result_list.add(Final_Result);
+                                _screen.setMovementMethod(new ScrollingMovementMethod());
+                                _screen.setText(display);
+                                _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
+                            }
+                        });
+                    }
+                }
+
+
+
+                else
+                {
+                    for(int wait_count = 0; wait_count < Integer.parseInt(temp1.Info_Delay);wait_count++)
+                    {
+                        Thread.sleep(1000);
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                display += "Waiting" + '\n'+'\n' ;
+                                _screen.setMovementMethod(new ScrollingMovementMethod());
+                                _screen.setText(display);
+                                _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
+                            }
+                        });
+                    }
+                }
+
+
+
+            }
+
+            //No need now , will open it after some time
+            /*
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    display +=  "Final_Result" + '\n';
+
+                    for (String s:Final_Result_list) {
+
+                        display +=  s + '\n';
+                        _screen.setMovementMethod(new ScrollingMovementMethod());
+                        _screen.setText(display);
+
+                    }
+
+                }
+
+
+            });
+
+            */
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    display += "***** Test Completed *****" + '\n'+'\n' ;
+                    _screen.setMovementMethod(new ScrollingMovementMethod());
+                    _screen.setText(display);
+                    _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
+                }
+            });
+
+
+        }
+
+        catch (Exception e){
+            Log.e("TEST PING", "exception: " + e.getMessage());
+            Log.e("TEST PING", "exception: " + e.toString());
+
+        }
     }
 
 
