@@ -1,8 +1,12 @@
 package com.example.priyankaagarwal.priyanka_pro1;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -12,6 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
@@ -23,6 +29,8 @@ import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.io.InputStreamReader;
 import android.widget.ListView;
@@ -208,13 +216,20 @@ public class PingTestMain extends AppCompatActivity {
 
 
     //public void fExecutePing()
+    @TargetApi(Build.VERSION_CODES.N)
     public String fExecutePing(TC_Type_Item Test_Info)
     {
-        String Time_string = "fail";
+
+        String current_time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
+        String Time_string = current_time + " fail";
+
 
         try
         {
             String cmdPing = "ping -c 1 -s " + Test_Info.Info_Size + " " + Test_Info.Info_Host;
+
+            current_time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
+
             Runtime r = Runtime.getRuntime();
             Process p = r.exec(cmdPing);
             BufferedReader in = new BufferedReader(	new InputStreamReader(p.getInputStream()));
@@ -226,7 +241,7 @@ public class PingTestMain extends AppCompatActivity {
                 if(inputLine.contains("time="))
                 {
 
-                    Time_string = inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
+                    Time_string =  current_time + " "+ inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
                 }
 
             }
@@ -237,7 +252,7 @@ public class PingTestMain extends AppCompatActivity {
 
         catch (Exception e) {
             Toast.makeText(this, "Error: "+ e.getMessage().toString(), Toast.LENGTH_SHORT).show();
-            return Time_string;
+            return current_time ;
 
         }
 
@@ -332,6 +347,25 @@ public class PingTestMain extends AppCompatActivity {
                     _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
                 }
             });
+
+            // Going to Save result in text file
+            String Save_Result_Time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
+
+
+            File file = new File("/sdcard/TestConnect/", "Results");
+            boolean Create_Result_folder_result = file.mkdirs();
+
+            String filename = "/sdcard/TestConnect/Results/" + Save_Result_Time + ".txt";
+
+            FileOutputStream outputStream;
+            outputStream = new FileOutputStream( new File(filename));
+            for (String result_line:Final_Result_list) {
+
+                outputStream.write(result_line.getBytes());
+            }
+
+
+            outputStream.close();
 
 
         }
