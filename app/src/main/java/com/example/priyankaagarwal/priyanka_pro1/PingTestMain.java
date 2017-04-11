@@ -43,6 +43,7 @@ public class PingTestMain extends AppCompatActivity {
     Button _btn_PingSetup ;
     Button _btn_StartTest ;
     Button _btn_pause;
+    Button _btn_stop;
     TextView _screen;
     ScrollView _ScrollView1;
     private String display = "LOGS" + '\n';
@@ -51,6 +52,8 @@ public class PingTestMain extends AppCompatActivity {
 
     ArrayList<TC_Type_Item> Play_TC_List;
     public boolean pause_state = false;
+
+    public Thread t1 = new Thread(){};
 
 
     private View.OnClickListener btnClickListner = new View.OnClickListener(){
@@ -98,6 +101,9 @@ public class PingTestMain extends AppCompatActivity {
         _btn_pause = (Button)findViewById(R.id.btn_pause);
         _btn_pause.setOnClickListener(btnClickListner);
 
+        _btn_stop = (Button)findViewById(R.id.btn_stop);
+        _btn_stop.setOnClickListener(btnClickListner);
+
          SetupButtonCLick1();
         //StartButtonClick();
     }
@@ -128,8 +134,9 @@ public class PingTestMain extends AppCompatActivity {
 
         try
         {
+            Final_Result_list.clear();
 
-            Thread t1 = new Thread(){
+            t1 = new Thread(){
 
                 @Override
                 public void run(){
@@ -150,6 +157,7 @@ public class PingTestMain extends AppCompatActivity {
             };
 
             t1.start();
+            _btn_StartTest.setEnabled(false);
 
         }
 
@@ -162,6 +170,37 @@ public class PingTestMain extends AppCompatActivity {
 
 
     public void StopTest(){
+
+        if(t1.isAlive())
+        {
+            String Pause_Title2 = (String)_btn_pause.getText();
+            if(Pause_Title2 == "Resume")
+            {
+                pause_state = false;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        _btn_pause.setText("Pause");
+
+                    }
+                });
+            }
+            t1.interrupt();
+            //super.onDestroy();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    display +=  "Test has been Stopped" + '\n';
+                    _screen.setMovementMethod(new ScrollingMovementMethod());
+                    _screen.setText(display);
+                    _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
+
+                }
+            });
+        }
+        SaveResultsText();
+
+        _btn_StartTest.setEnabled(true);
 
     }
 
@@ -285,6 +324,39 @@ public class PingTestMain extends AppCompatActivity {
 
         }
 
+    }
+
+
+    public void SaveResultsText()
+    {
+        try{
+
+            // Going to Save result in text file
+            String Save_Result_Time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
+
+
+            File file = new File("/sdcard/TestConnect/", "Results");
+            boolean Create_Result_folder_result = file.mkdirs();
+
+            String filename = "/sdcard/TestConnect/Results/" + Save_Result_Time + ".txt";
+
+            FileOutputStream outputStream;
+            outputStream = new FileOutputStream( new File(filename));
+            for (String result_line:Final_Result_list) {
+
+                outputStream.write(result_line.getBytes());
+            }
+
+
+            outputStream.close();
+
+        }
+
+        catch (Exception e){
+            Log.e("TEST PING", "exception: " + e.getMessage());
+            Log.e("TEST PING", "exception: " + e.toString());
+
+        }
     }
 
 
