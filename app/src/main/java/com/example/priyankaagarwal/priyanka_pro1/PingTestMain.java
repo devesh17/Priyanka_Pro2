@@ -54,6 +54,7 @@ public class PingTestMain extends AppCompatActivity {
     public boolean pause_state = false;
 
     public Thread t1 = new Thread(){};
+    public String Final_Summary_String;
 
 
     private View.OnClickListener btnClickListner = new View.OnClickListener(){
@@ -285,11 +286,14 @@ public class PingTestMain extends AppCompatActivity {
 
     //public void fExecutePing()
     @TargetApi(Build.VERSION_CODES.N)
-    public String fExecutePing(TC_Type_Item Test_Info)
+    public Result_Info fExecutePing(TC_Type_Item Test_Info)
     {
 
+        Result_Info temp_Result_Info = new Result_Info();
         String current_time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
-        String Time_string = current_time + " fail";
+        //String Time_string = current_time + " fail";
+        temp_Result_Info.TimeString = current_time + " fail";
+        temp_Result_Info.SummaryString = "";
 
 
         try
@@ -302,25 +306,35 @@ public class PingTestMain extends AppCompatActivity {
             Process p = r.exec(cmdPing);
             BufferedReader in = new BufferedReader(	new InputStreamReader(p.getInputStream()));
             String inputLine;
-
+            boolean time_1_Occur = false;
             while((inputLine = in.readLine())!= null)
             {
 
-                if(inputLine.contains("time="))
+                if (inputLine.contains("time="))
                 {
+                    time_1_Occur = true;
+                    temp_Result_Info.TimeString = current_time + " " + inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
+                }
+                    // replaced Time_string with
+                else if(inputLine.contains("time") && (!time_1_Occur))
+                {
+                    temp_Result_Info.TimeString = current_time + " " + inputLine.substring(inputLine.indexOf("time") + 5, inputLine.indexOf("ms")).trim();
+                }
 
-                    Time_string =  current_time + " "+ inputLine.substring(inputLine.indexOf("time=") + 5, inputLine.indexOf("ms")).trim();
+                else
+                {
+                    temp_Result_Info.SummaryString += inputLine + " ";
                 }
 
             }
 
-            return Time_string;
+            return temp_Result_Info;
 
         }
 
         catch (Exception e) {
             Toast.makeText(this, "Error: "+ e.getMessage().toString(), Toast.LENGTH_SHORT).show();
-            return current_time ;
+            return temp_Result_Info ;
 
         }
 
@@ -333,7 +347,8 @@ public class PingTestMain extends AppCompatActivity {
 
             // Going to Save result in text file
             String Save_Result_Time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
-
+            int Pass_Count = 0;
+            int Fail_Count = 0;
 
             File file = new File("/sdcard/TestConnect/", "Results");
             boolean Create_Result_folder_result = file.mkdirs();
@@ -343,11 +358,19 @@ public class PingTestMain extends AppCompatActivity {
             FileOutputStream outputStream;
             outputStream = new FileOutputStream( new File(filename));
             for (String result_line:Final_Result_list) {
-
+                if(result_line.contains("fail"))
+                {
+                    Fail_Count++;
+                }
+                else
+                {
+                    Pass_Count++;
+                }
                 outputStream.write(result_line.getBytes());
             }
 
-
+            Final_Summary_String = "FINAL SUMMARY Success Packets: " + Integer.toString(Pass_Count) + " Lost Packets:" + Integer.toString(Fail_Count);
+            outputStream.write(Final_Summary_String.getBytes());
             outputStream.close();
 
         }
@@ -400,11 +423,13 @@ public class PingTestMain extends AppCompatActivity {
 
                     for(int P_Count=0; P_Count < Integer.parseInt(temp1.Info_Packet_Count);P_Count++)
                     {
-                        String s = fExecutePing(temp1);
+                        Result_Info temp_Exec_Ping_ResultInfo = new Result_Info();
+                        //String s = fExecutePing(temp1);
+                        temp_Exec_Ping_ResultInfo = fExecutePing(temp1);
                         int Internal_Delay = (Integer.parseInt(temp1.Info_Interval))*1000;
                         Thread.sleep(Internal_Delay);
 
-                        Final_Result = "TC No: " + Integer.toString(TC_Count) +" PING NO: " + Integer.toString(P_Count+1) + " RespTime :" +  s +"ms" + '\n';
+                        Final_Result = "TC No: " + Integer.toString(TC_Count) +" PING NO: " + Integer.toString(P_Count+1) + " RespTime :" +  temp_Exec_Ping_ResultInfo.TimeString +"ms " + "\n summary:" +temp_Exec_Ping_ResultInfo.SummaryString +'\n';
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -533,24 +558,30 @@ public class PingTestMain extends AppCompatActivity {
                 }
             });
 
-            // Going to Save result in text file
-            String Save_Result_Time = (DateFormat.format("dd-MM-yyyy hh:mm:ss", new java.util.Date()).toString()).replaceAll("-","_").replaceAll(" ","_").replaceAll(":","_");
+            SaveResultsText();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    display += "***** FINAL SUMMARY*****" + '\n'+'\n' ;
+                    _screen.setMovementMethod(new ScrollingMovementMethod());
+                    _screen.setText(display);
+
+                     display += Final_Summary_String + '\n'+'\n' ;
+                    _screen.setText(display);
+                    _screen.setMovementMethod(new ScrollingMovementMethod());
+                    _ScrollView1.fullScroll(ScrollView.FOCUS_DOWN);
+
+                    _btn_StartTest.setEnabled(true);
+                }
+            });
 
 
-            File file = new File("/sdcard/TestConnect/", "Results");
-            boolean Create_Result_folder_result = file.mkdirs();
-
-            String filename = "/sdcard/TestConnect/Results/" + Save_Result_Time + ".txt";
-
-            FileOutputStream outputStream;
-            outputStream = new FileOutputStream( new File(filename));
-            for (String result_line:Final_Result_list) {
-
-                outputStream.write(result_line.getBytes());
-            }
 
 
-            outputStream.close();
+
+
+
 
 
         }
